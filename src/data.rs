@@ -1,7 +1,7 @@
 use csv::ReaderBuilder;
 use std::error::Error;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub struct Patient {
     pub age: f32,
     pub hypertension: u8,
@@ -23,6 +23,6 @@ pub fn load_data(path: &str) -> Result<Vec<Patient>, Box<dyn Error>> {
         let record: Patient = result?;
         patients.push(record);
     }
-    
+
     Ok(patients)
 }
