@@ -6,5 +6,8 @@ fn main() {
         .expect("Failed to load patient data");
 
     println!("Loaded {} patients", patients.len());
+
+    let rule_accuracy = analysis::evaluate_rule_based(&patients);
+println!("Rule-based classifier accuracy: {:.2}%", rule_accuracy * 100.0);
 }
 
