@@ -1,5 +1,6 @@
 mod data;
 mod analysis;
+mod model;
 
 fn main() {
     let patients = data::load_data("stroke-data.csv")
@@ -7,11 +8,7 @@ fn main() {
 
     println!("Loaded {} patients", patients.len());
 
-    let rule_accuracy = analysis::evaluate_rule_based(&patients);
-println!("Rule-based classifier accuracy: {:.2}%", rule_accuracy * 100.0);
+    analysis::print_confusion_matrix(&patients);
 
-let recall = analysis::rule_based_recall(&patients);
-println!("Rule-based recall: {:.2}%", recall * 100.0);
-
-analysis::print_confusion_matrix(&patients);
+    model::real_decision_tree_classifier(&patients);
 }

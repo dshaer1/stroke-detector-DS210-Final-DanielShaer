@@ -1,7 +1,7 @@
 use csv::ReaderBuilder;
 use std::error::Error;
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize)]
 pub struct Patient {
     pub age: f32,
     pub hypertension: u8,
