@@ -40,3 +40,51 @@ pub fn evaluate_rule_based(patients: &[Patient]) -> f32 {
 
     correct as f32 / patients.len() as f32
 }
+
+// This fn returns the recall (true positive rate) for the rule-based classifier, as just overall accuracy is qute misleading because there are so many moe negs than pos.
+pub fn rule_based_recall(patients: &[Patient]) -> f32 {
+    let mut tp = 0;
+    let mut fn_ = 0;
+
+    for patient in patients {
+        let pred = risk_to_label(&predict_rule_based(patient));
+        let actual = patient.stroke;
+
+        match (pred, actual) {
+            (1, 1) => tp += 1,
+            (0, 1) => fn_ += 1,
+            _ => {}
+        }
+    }
+
+    if tp + fn_ == 0 {
+        0.0
+    } else {
+        tp as f32 / (tp + fn_) as f32
+    }
+}
+
+// This creates a confusion matrix comparing predicted vs actual stroke outcomes.
+pub fn print_confusion_matrix(patients: &[Patient]) {
+    let mut tp = 0;
+    let mut fp = 0;
+    let mut tn = 0;
+    let mut fn_ = 0;
+
+    for patient in patients {
+        let pred = risk_to_label(&predict_rule_based(patient));
+        let actual = patient.stroke;
+
+        match (pred, actual) {
+            (1, 1) => tp += 1,
+            (1, 0) => fp += 1,
+            (0, 0) => tn += 1,
+            (0, 1) => fn_ += 1,
+            _ => {}
+        }
+    }
+
+    println!("\nConfusion Matrix (Rule-Based Classifier):");
+    println!("TP: {} | FP: {}", tp, fp);
+    println!("FN: {} | TN: {}", fn_, tn);
+}
