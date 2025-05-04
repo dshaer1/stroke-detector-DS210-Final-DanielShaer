@@ -7,16 +7,19 @@ use smartcore::tree::decision_tree_classifier::*;
 
 /// Converts patient structs into feature vectors used by the model.
 fn preprocess_features(patients: &[Patient]) -> Vec<Vec<f32>> {
-    patients.iter().map(|p| {
-        vec![
-            p.age,
-            p.hypertension as f32,
-            p.heart_disease as f32,
-            if p.ever_married == "Yes" { 1.0 } else { 0.0 },
-            p.avg_glucose_level,
-            p.bmi,
-        ]
-    }).collect()
+    patients
+        .iter()
+        .map(|p| {
+            vec![
+                p.age,
+                p.hypertension as f32,
+                p.heart_disease as f32,
+                if p.ever_married == "Yes" { 1.0 } else { 0.0 },
+                p.avg_glucose_level,
+                p.bmi,
+            ]
+        })
+        .collect()
 }
 
 /// Extracts stroke outcome labels (0 or 1) from a list of patients.
@@ -24,15 +27,12 @@ fn get_labels(patients: &[Patient]) -> Vec<u8> {
     patients.iter().map(|p| p.stroke).collect()
 }
 
-/// Trains a decision tree classifier on patient data, evaluates it,
-pub fn real_decision_tree_classifier(patients: &[Patient]) -> (
-    f32,
-    f32,
-    DecisionTreeClassifier<f32, u8, DenseMatrix<f32>, Vec<u8>>,
-) {
+/// Trains a decision tree model (with oversampling) and returns the trained model.
+pub fn train_decision_tree(
+    patients: &[Patient],
+) -> DecisionTreeClassifier<f32, u8, DenseMatrix<f32>, Vec<u8>> {
     let mut training_data = patients.to_vec();
 
-    // Oversample positive stroke cases to balance the dataset
     let positive_cases: Vec<Patient> = patients
         .iter()
         .filter(|p| p.stroke == 1)
@@ -43,21 +43,37 @@ pub fn real_decision_tree_classifier(patients: &[Patient]) -> (
         training_data.extend(positive_cases.clone());
     }
 
-    // Create input features and output labels
     let features = preprocess_features(&training_data);
     let labels = get_labels(&training_data);
-
-    // Convert features into a matrix and split into train/test sets
     let x_matrix = DenseMatrix::from_2d_vec(&features);
-    let (x_train, x_test, y_train, y_test) = train_test_split(&x_matrix, &labels, 0.2, true, None);
 
-    // Train decision tree classifier
+    DecisionTreeClassifier::fit(&x_matrix, &labels, Default::default()).unwrap()
+}
+
+/// Evaluates decision tree accuracy, recall, and confusion matrix.
+pub fn evaluate_decision_tree(patients: &[Patient]) {
+    let mut eval_data = patients.to_vec();
+
+    let positive_cases: Vec<Patient> = patients
+        .iter()
+        .filter(|p| p.stroke == 1)
+        .cloned()
+        .collect();
+
+    for _ in 0..3 {
+        eval_data.extend(positive_cases.clone());
+    }
+
+    let features = preprocess_features(&eval_data);
+    let labels = get_labels(&eval_data);
+    let x_matrix = DenseMatrix::from_2d_vec(&features);
+
+    let (x_train, x_test, y_train, y_test) =
+        train_test_split(&x_matrix, &labels, 0.2, true, None);
+
     let model = DecisionTreeClassifier::fit(&x_train, &y_train, Default::default()).unwrap();
-
-    // Predict on test set
     let predictions = model.predict(&x_test).unwrap();
 
-    // Calculate evaluation metrics
     let mut correct = 0;
     let mut tp = 0;
     let mut fp = 0;
@@ -84,15 +100,12 @@ pub fn real_decision_tree_classifier(patients: &[Patient]) -> (
         tp as f32 / (tp + fn_) as f32
     };
 
-    // Print results
     println!("\nDecision Tree Results:");
     println!("Accuracy: {:.2}%", accuracy * 100.0);
     println!("Recall (TPR): {:.2}%", recall * 100.0);
     println!("Confusion Matrix:");
     println!("TP: {} | FP: {}", tp, fp);
     println!("FN: {} | TN: {}", fn_, tn);
-
-    (accuracy, recall, model)
 }
 
 /// Uses a trained decision tree to predict stroke (0 or 1) for a new patient.
@@ -100,7 +113,6 @@ pub fn predict_patient(
     model: &DecisionTreeClassifier<f32, u8, DenseMatrix<f32>, Vec<u8>>,
     patient: &Patient,
 ) -> u8 {
-    // Convert single patient into model-compatible matrix format
     let features = vec![vec![
         patient.age,
         patient.hypertension as f32,
@@ -111,7 +123,5 @@ pub fn predict_patient(
     ]];
 
     let matrix = DenseMatrix::from_2d_vec(&features);
-
-    // Predict stroke risk (0 or 1)
     model.predict(&matrix).unwrap()[0]
 }
