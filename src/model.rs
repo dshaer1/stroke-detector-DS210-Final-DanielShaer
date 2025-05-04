@@ -125,3 +125,52 @@ pub fn predict_patient(
     let matrix = DenseMatrix::from_2d_vec(&features);
     model.predict(&matrix).unwrap()[0]
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn mock_patient(stroke: u8) -> Patient {
+        Patient {
+            age: 60.0,
+            hypertension: 1,
+            heart_disease: 0,
+            ever_married: "Yes".to_string(),
+            avg_glucose_level: 150.0,
+            bmi: 25.0,
+            stroke,
+        }
+    }
+
+    #[test]
+    fn test_preprocess_features() {
+        let p = mock_patient(1);
+        let features = preprocess_features(&[p]);
+        assert_eq!(features[0].len(), 6);
+        assert_eq!(features[0][0], 60.0);
+        assert_eq!(features[0][3], 1.0); // married => 1.0
+    }
+
+    #[test]
+    fn test_get_labels() {
+        let p1 = mock_patient(1);
+        let p2 = mock_patient(0);
+        let labels = get_labels(&[p1, p2]);
+        assert_eq!(labels, vec![1, 0]);
+    }
+
+    #[test]
+fn test_feature_vector_length() {
+    let p = Patient {
+        age: 45.0,
+        hypertension: 0,
+        heart_disease: 1,
+        ever_married: "Yes".to_string(),
+        avg_glucose_level: 120.0,
+        bmi: 25.0,
+        stroke: 0,
+    };
+    let vec = preprocess_features(&[p]);
+    assert_eq!(vec[0].len(), 6);
+}
+
+}
