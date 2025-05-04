@@ -1,6 +1,8 @@
+// Provides a simple rule-based classifier and confusion matrix evaluator for stroke risk prediction.
+
 use crate::data::Patient;
 
-// Note: I created this Enum to represent stroke risk level based on simple rules.
+/// Categorizes stroke risk into three levels based on patient traits.
 #[derive(Debug, PartialEq)]
 pub enum RiskLevel {
     High,
@@ -8,18 +10,22 @@ pub enum RiskLevel {
     Low,
 }
 
-// This fn predicts stroke risk based on basic rules using age, heart disease, hypertension, and glucose.
+/// Predicts stroke risk level using basic rules:
+/// - High risk: age > 65 and heart disease
+/// - Moderate risk: hypertension and high glucose
+/// - Low risk: neither of the above
 pub fn predict_rule_based(patient: &Patient) -> RiskLevel {
-    if patient.age > 60.0 && patient.avg_glucose_level > 175.0 {
+    if patient.age > 65.0 && patient.heart_disease == 1 {
         RiskLevel::High
-    } else if patient.hypertension == 1 && patient.avg_glucose_level > 175.0 {
+    } else if patient.hypertension == 1 && patient.avg_glucose_level > 150.0 {
         RiskLevel::Moderate
     } else {
         RiskLevel::Low
     }
 }
 
-// This converts RiskLevel into a binary label
+/// Converts a `RiskLevel` enum into a binary label:
+/// 1 = likely to have stroke, 0 = not likely
 pub fn risk_to_label(risk: &RiskLevel) -> u8 {
     match risk {
         RiskLevel::High | RiskLevel::Moderate => 1,
@@ -27,7 +33,8 @@ pub fn risk_to_label(risk: &RiskLevel) -> u8 {
     }
 }
 
-// This prints full performance metrics for the rule-based classifier in a consistent format.
+/// Prints accuracy, recall, and a confusion matrix based on rule-based predictions, (didn't update name)
+/// Compares predicted vs actual stroke outcomes.
 pub fn print_confusion_matrix(patients: &[Patient]) {
     let mut tp = 0;
     let mut fp = 0;
@@ -35,6 +42,7 @@ pub fn print_confusion_matrix(patients: &[Patient]) {
     let mut fn_ = 0;
     let mut correct = 0;
 
+    // Evaluate predictions for each patient and update metrics
     for patient in patients {
         let pred = risk_to_label(&predict_rule_based(patient));
         let actual = patient.stroke;
@@ -52,6 +60,7 @@ pub fn print_confusion_matrix(patients: &[Patient]) {
         }
     }
 
+    // Calculate basic metrics
     let accuracy = correct as f32 / patients.len() as f32;
     let recall = if tp + fn_ == 0 {
         0.0
@@ -59,6 +68,7 @@ pub fn print_confusion_matrix(patients: &[Patient]) {
         tp as f32 / (tp + fn_) as f32
     };
 
+    // Output evaluation results
     println!("\nRule-Based Classifier Results:");
     println!("Accuracy: {:.2}%", accuracy * 100.0);
     println!("Recall (TPR): {:.2}%", recall * 100.0);
