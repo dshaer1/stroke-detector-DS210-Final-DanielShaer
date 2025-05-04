@@ -10,9 +10,9 @@ pub enum RiskLevel {
 
 // This fn predicts stroke risk based on basic rules using age, heart disease, hypertension, and glucose.
 pub fn predict_rule_based(patient: &Patient) -> RiskLevel {
-    if patient.age > 65.0 && patient.heart_disease == 1 {
+    if patient.age > 60.0 && patient.avg_glucose_level > 175.0 {
         RiskLevel::High
-    } else if patient.hypertension == 1 && patient.avg_glucose_level > 150.0 {
+    } else if patient.hypertension == 1 && patient.avg_glucose_level > 175.0 {
         RiskLevel::Moderate
     } else {
         RiskLevel::Low

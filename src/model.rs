@@ -22,8 +22,12 @@ fn get_labels(patients: &[Patient]) -> Vec<u8> {
     patients.iter().map(|p| p.stroke).collect()
 }
 
-// this fn trains decision tree and returns its accuracy on test data
-pub fn real_decision_tree_classifier(patients: &[Patient]) -> (f32, f32) {
+// trains decision tree, prints results, and returns accuracy, recall, and the trained model
+pub fn real_decision_tree_classifier(patients: &[Patient]) -> (
+    f32,
+    f32,
+    DecisionTreeClassifier<f32, u8, DenseMatrix<f32>, Vec<u8>>,
+    ) {
     let mut training_data = patients.to_vec();
 
     let positive_cases: Vec<Patient> = patients
@@ -32,7 +36,6 @@ pub fn real_decision_tree_classifier(patients: &[Patient]) -> (f32, f32) {
         .cloned()
         .collect();
 
-    // To oversample the far rarer stroke occurrence, each positive case appears 3 extra times
     for _ in 0..3 {
         training_data.extend(positive_cases.clone());
     }
@@ -79,5 +82,23 @@ pub fn real_decision_tree_classifier(patients: &[Patient]) -> (f32, f32) {
     println!("TP: {} | FP: {}", tp, fp);
     println!("FN: {} | TN: {}", fn_, tn);
 
-    (accuracy, recall)
+    (accuracy, recall, model)
+}
+
+// predicts stroke (1 or 0) for a single patient using trained model
+pub fn predict_patient(
+    model: &DecisionTreeClassifier<f32, u8, DenseMatrix<f32>, Vec<u8>>,
+    patient: &Patient,
+    ) -> u8 {
+    let features = vec![vec![
+        patient.age,
+        patient.hypertension as f32,
+        patient.heart_disease as f32,
+        if patient.ever_married == "Yes" { 1.0 } else { 0.0 },
+        patient.avg_glucose_level,
+        patient.bmi,
+    ]];
+
+    let matrix = DenseMatrix::from_2d_vec(&features);
+    model.predict(&matrix).unwrap()[0]
 }
